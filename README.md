@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# qgis-plugin-make-sector
-QGIS Plugin to create sector, circle radius, and spidergraph delimited and vector layer.
-=======
 # qgis-plugin-make-sector (Make Sector)
 **Make Sector** is QGIS Plugin to create sector, circle radius, and spidergraph for delimited text and vector layer. It uses python native and QGIS native algorithm itself to run.
 
@@ -22,4 +18,3 @@ You should have received a copy of the GNU General Public License along with thi
 
 
 Copyright (c) 2024 [Imam Sibro Muhlisi](https://www.linkedin.com/in/imam-sibro-muhlisi/)
->>>>>>> origin/master
