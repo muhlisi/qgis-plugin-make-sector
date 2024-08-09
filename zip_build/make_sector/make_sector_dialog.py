@@ -56,7 +56,8 @@ qgis_prefix = QgsApplication.prefixPath()
 user_settingpath = str(QgsApplication.qgisSettingsDirPath())
 cache_path_add = "Local/QGIS/QGIS3/cache"
 cache_path_final = user_settingpath[:user_settingpath.find('Roaming')] + cache_path_add
-pembagi_radius = 110593 # for native algo to turn radius into unit meters
+# pembagi_radius = 110593 # for native algo to turn radius into unit meters
+pembagi_radius = 110596.44  # this is more accurate, this for wedge buffers native qgis algo
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -76,8 +77,16 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         
         self.pbar.setValue(0)
 
+        version = "Make Sector v1.1"
+        # credit_label = "Copyright (c) 2024 Imam Sibro Muhlisi"
+        # set label version
+        self.label_version.setText(version)
+        self.label_version.setStyleSheet("QLabel {color: blue;}")
+
+        # set credit label
+        # self.credit_label.setText(credit_label)
+
         self.text_logging.setReadOnly(True)
-        self.credit.setReadOnly(True)
 
         # run refresh
         self.refresh_button()
@@ -153,7 +162,7 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
     
     def cbstate(self, b):
         list_combobox = [self.combox_bw, self.combox_rad]
-        list_qlineedit = [self.qle_bw_custom, self.doublespinbox_rad]
+        list_qlineedit = [self.doublespinbox_bw, self.doublespinbox_rad]
 
         # for checkbox beamwidth
         if self.tab_widget.currentIndex() == 0 and 'beamwidth' in b.text().lower():
@@ -552,11 +561,10 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         self.tab_widget.setCurrentIndex(0)
 
         # setup line edit
-        validator_bw = QIntValidator(5, 170, self)
-        self.qle_bw_custom.setValidator(validator_bw)
+        self.doublespinbox_bw.setValue(60.00)
         self.doublespinbox_rad.setValue(0.00)
         # disable qlineedit
-        self.qle_bw_custom.setEnabled(False)
+        self.doublespinbox_bw.setEnabled(False)
         self.doublespinbox_rad.setEnabled(False)
 
         # uncheck all cbox
@@ -725,53 +733,6 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
             return Point(lon, lat)
         except:
             return None
-
-    def make_sector(self, step, lon, lat, azimuth, beamwidth, radius, per_loop, steps=20):
-        # steps is for curved level, the lower, the less curved
-        
-        step = step + 1
-        pbar_value = 5 + (step * per_loop)
-
-        try :
-            if pbar_value <= 95.00:
-                self.pbar.setValue(pbar_value)
-        except:
-            pass
-
-        try:
-            center = Point(float(lon), float(lat))
-            start_angle = float(azimuth)-(float(beamwidth)/2)
-            end_angle = float(azimuth)+(float(beamwidth)/2)
-            radius = float(radius)
-
-            if self.combox_rad_unit.currentText() == 'km':
-                radius = radius*1000
-            
-            # pengali is multiplier to change unit to meters, user input in meters default
-            pengali = 9.05797/(10 ** 6)
-            radius = radius * pengali
-            
-            def polar_point(origin_point, angle,  distance):
-                return [origin_point.x + math.sin(math.radians(angle)) * distance, origin_point.y + math.cos(math.radians(angle)) * distance]
-        
-            if start_angle > end_angle:
-                start_angle = start_angle - 360
-            else:
-                pass
-            step_angle_width = (end_angle-start_angle) / steps
-            sector_width = (end_angle-start_angle) 
-            segment_vertices = []
-
-            segment_vertices.append(polar_point(center, 0,0))
-            segment_vertices.append(polar_point(center, start_angle,radius))
-
-            for z in range(1, steps):
-                segment_vertices.append((polar_point(center, start_angle + z * step_angle_width,radius)))
-            segment_vertices.append(polar_point(center, start_angle+sector_width,radius))
-            segment_vertices.append(polar_point(center, 0,0))
-            return Polygon(segment_vertices)
-        except:
-            return None
         
     def radius_final_rad(self, radius):
         try:
@@ -784,7 +745,6 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
             return 0
 
     def run_create_sector_tab(self):
-<<<<<<< HEAD
         # status label
         self.status_label.setText('Processing...')
 
@@ -797,12 +757,12 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
                 return
             
         # check bandwidth column
-        if self.combox_bw.currentText() == '' and self.qle_bw_custom.text() == '':
+        if self.combox_bw.currentText() == '' and self.doublespinbox_bw.value() <= 0.00:
             # logging
             self.status_label.setText('❌ Please check your beamwidth!')
             return
         
-        if self.cbox_bw_custom_value.isChecked() == True and self.qle_bw_custom.text() == '':
+        if self.cbox_bw_custom_value.isChecked() == True and self.doublespinbox_bw.value() <= 0.00:
             # logging
             self.status_label.setText('❌ Please check your beamwidth!')
             return
@@ -836,69 +796,6 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # button disable
         self.button_status('disable')
-=======
-        # disable frame
-        self.frame_main.setEnabled(False)
-        
-        # status label
-        self.status_label.setText('Processing...')
-
-        # button disable
-        self.button_status('disable')
-        
-        # logging
-        self.logging("Run create sector..")
-
-        # checking all combox, is there any null
-        all_combox = [self.combox_list_layer, self.combox_lat, self.combox_lon, self.combox_az, self.combox_bw, self.combox_rad]
-        for combox in all_combox:
-            if combox.currentText() == '':
-                if combox == self.combox_bw:
-                    if self.cbox_bw_custom_value.isChecked() == True and self.qle_bw_custom.text() != '':
-                        pass
-                    else:
-                        # logging
-                        self.logging('❌ Please fill beamwidth custom value!')
-                        self.status_label.setText('❌ Please fill beamwidth custom value!')
-                        # enable frame
-                        self.frame_main.setEnabled(True)
-                        return
-                if combox == self.combox_rad:
-                    if self.cbox_rad_custom_value.isChecked() == True and self.doublespinbox_rad.value() > 0.00:
-                        pass
-                    else:
-                        self.status_label.setText('❌ Please fill radius custom value!')
-                        # enable frame
-                        self.frame_main.setEnabled(True)
-                        return
-                # logging
-                self.logging('❌ Please check your columns!')
-                self.status_label.setText('❌ Please check your columns!')
-                # enable frame
-                self.frame_main.setEnabled(True)
-                return
-            if combox.currentText() != '' and (combox == self.combox_bw or combox == self.combox_rad):
-                if combox == self.combox_bw and self.cbox_bw_custom_value.isChecked() == True:
-                    if self.cbox_bw_custom_value.isChecked() == True and self.qle_bw_custom.text() != '':
-                        pass
-                    else:
-                        # logging
-                        self.logging('❌ Please fill beamwidth custom value!')
-                        self.status_label.setText('❌ Please fill beamwidth custom value!')
-                        # enable frame
-                        self.frame_main.setEnabled(True)
-                        return
-                if combox == self.combox_rad and self.cbox_rad_custom_value.isChecked() == True:
-                    if self.cbox_rad_custom_value.isChecked() == True and self.doublespinbox_rad.value() > 0.00:
-                        pass
-                    else:
-                        # logging
-                        self.logging('❌ Please fill radius custom value!')
-                        self.status_label.setText('❌ Please fill radius custom value!')
-                        # enable frame
-                        self.frame_main.setEnabled(True)
-                        return
->>>>>>> origin/master
 
         # activate Log tab
         self.tab_widget.setCurrentIndex(3)
@@ -918,113 +815,181 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # for beamwidth
         if self.cbox_bw_custom_value.isChecked() == True:
-            beamwidth = self.qle_bw_custom.text()
+            beamwidth = float(self.doublespinbox_bw.value())
         
         # for radius
         if self.cbox_rad_custom_value.isChecked() == True:
             radius = float(self.doublespinbox_rad.value())
-        
-        self.pbar.setValue(5)
+            if self.combox_rad_unit.currentText() == 'm':
+                radius = radius/pembagi_radius
+            if self.combox_rad_unit.currentText() == 'km':
+                radius = radius*1000/pembagi_radius
+            
+            # # pengali is multiplier to change unit to meters, user input in meters default (only if using geopandas to create geometry) not applicable for qgis native algo
+            # pengali = 9.05797/(10 ** 6)
+            # radius = radius * pengali
         
         # process
         lyr = QgsProject.instance().mapLayersByName(layer)[0]
+        lyr_name = lyr.name()
+        lyr_source = lyr.source()
 
-        # List all fields/columns in the lyr
-        cols = [f.name() for f in lyr.fields()]
+        self.pbar.setValue(random.randint(4,10))
+        self.logging("Calculate radius..")
 
-        # generate row values (feature) of a field from lyr
-        datagen = ([f[col] for col in cols] for f in lyr.getFeatures())
+        # for new field if using km
+        new_radius_field = f"{radius}_{random.randint(1,9)}"
+        # if radius using column
+        if radius == self.combox_rad.currentText():
+            # read csv
+            path_ori = lyr_source
+            path_ori = path_ori[:path_ori.find('.csv')+4]
+            path = path_ori
+            if 'file:///' in path:
+                path = path.replace('file:///', '')
+            path = urllib.parse.unquote(path)
+            path = Path(path)
+            df = pd.read_csv(path)
 
-        # logging
-        self.logging("Read layer..")
-        gcell = pd.DataFrame.from_records(data=datagen, columns=cols)       # coerce_float=True
-        for columns in gcell.items():
-            if 'object' in str(gcell[columns[0]].dtype):
-                gcell[columns[0]] = gcell[columns[0]].str.normalize('NFKD')
-<<<<<<< HEAD
-        gcell.reset_index(inplace=True)
+            # fix unicode if any unicode
+            for columns in df.items():
+                if 'object' in str(df[columns[0]].dtype):
+                    df[columns[0]] = df[columns[0]].str.normalize('NFKD')
+            
+            # add new column
+            if self.combox_rad_unit.currentText() == 'km':
+                df.loc[:, new_radius_field] = df.apply(lambda x: (x[radius]*1000/pembagi_radius), axis=1)
+            if self.combox_rad_unit.currentText() == 'm':
+                df.loc[:, new_radius_field] = df.apply(lambda x: (x[radius]/pembagi_radius), axis=1)
 
-        # for counter / progress
-        gcell['counter'] = gcell.index
+            # df.to_csv(path, index=False)
+            with open (path, 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(list(df))
+
+                for index, row in df.iterrows():
+                    writer.writerow(df.loc[index, :].values.flatten().tolist())
         
-=======
+            # csv seem cannot be reload - I dont know. we remove old csv, then reload the new one with same path
+            layer_csv = QgsProject.instance().mapLayersByName(lyr_name)[0]
+            crs_ori = layer_csv.crs()
+            # layer_csv.reload()
+            # remove old layer
+            QgsProject.instance().removeMapLayer(layer_csv.id())
 
->>>>>>> origin/master
-        # cek row number
-        row_number = len(gcell.index)
-        per_loop = 1 / (row_number / 80)
+            # load the new one
+            uri = path_ori + f'?delimiter=,&yField={lat}&xField={lon}'
+            layer_csv_new = QgsVectorLayer(uri, lyr_name, 'delimitedtext')
+            layer_csv_new.setCrs(crs_ori)
+            QgsProject.instance().addMapLayer(layer_csv_new)
+
+            # execute param
+            layer_csv_new = QgsProject.instance().mapLayersByName(lyr_name)[0]
+            lyr_source = layer_csv_new.source()
+
+            radius = new_radius_field
+
+            # # add new field and radius in meter
+            # new_radius_field = f"{radius}_{random.randint(1,9)}"
+            # pr = lyr.dataProvider()
+            # pr.addAttributes([QgsField(new_radius_field, QVariant.String)])
+            # lyr.updateFields()
+
+            # with edit(lyr):
+            #     for f in lyr.getFeatures():
+            #         f[new_radius_field] = f[radius]*1000
+            #         lyr.updateFeature(f)
+            
+            # radius = new_radius_field
 
         # logging
-        self.logging("Starting create geometry..")
-        # create kolom geometry
+        self.pbar.setValue(random.randint(11,30))
+        self.logging("Create wedge..")
+        
+        param_wedge = {}
         # jika tidak ada custom value untuk beamwidth dan radius
         if self.cbox_bw_custom_value.isChecked() == False and self.cbox_rad_custom_value.isChecked() == False:
-<<<<<<< HEAD
-            gcell.loc[:, 'geometry'] = gcell.apply(lambda x: self.make_sector(x['index'], x[lon], x[lat], x[azimuth], x[beamwidth], x[radius], per_loop), axis=1)
+            param_wedge = {'INPUT':lyr_source,'AZIMUTH':QgsProperty.fromExpression(f'"{azimuth}"'),'WIDTH':QgsProperty.fromExpression(f'"{beamwidth}"'),'OUTER_RADIUS':QgsProperty.fromExpression(f'"{radius}"'),'INNER_RADIUS':0,'OUTPUT':'TEMPORARY_OUTPUT'}
         # jika ada custom value untuk beamwidth tapi radius tidak
         if self.cbox_bw_custom_value.isChecked() == True and self.cbox_rad_custom_value.isChecked() == False:
-            gcell.loc[:, 'geometry'] = gcell.apply(lambda x: self.make_sector(x['index'], x[lon], x[lat], x[azimuth], beamwidth, x[radius], per_loop), axis=1)
+            param_wedge = {'INPUT':lyr_source,'AZIMUTH':QgsProperty.fromExpression(f'"{azimuth}"'),'WIDTH':beamwidth,'OUTER_RADIUS':QgsProperty.fromExpression(f'"{radius}"'),'INNER_RADIUS':0,'OUTPUT':'TEMPORARY_OUTPUT'}
         # jika tidak ada custom value untuk beamwidth tapi radius ada
         if self.cbox_bw_custom_value.isChecked() == False and self.cbox_rad_custom_value.isChecked() == True:
-            gcell.loc[:, 'geometry'] = gcell.apply(lambda x: self.make_sector(x['index'], x[lon], x[lat], x[azimuth], x[beamwidth], radius, per_loop), axis=1)
+            param_wedge = {'INPUT':lyr_source,'AZIMUTH':QgsProperty.fromExpression(f'"{azimuth}"'),'WIDTH':QgsProperty.fromExpression(f'"{beamwidth}"'),'OUTER_RADIUS':radius,'INNER_RADIUS':0,'OUTPUT':'TEMPORARY_OUTPUT'}
         # jika ada custom value untuk beamwidth dan radius
         if self.cbox_bw_custom_value.isChecked() == True and self.cbox_rad_custom_value.isChecked() == True:
-            gcell.loc[:, 'geometry'] = gcell.apply(lambda x: self.make_sector(x['index'], x[lon], x[lat], x[azimuth], beamwidth, radius, per_loop), axis=1)
-=======
-            gcell.loc[:, 'geometry'] = gcell.apply(lambda x: self.make_sector(gcell.index[gcell[lon] == x[lon]][0], x[lon], x[lat], x[azimuth], x[beamwidth], x[radius], per_loop), axis=1)
-        # jika ada custom value untuk beamwidth tapi radius tidak
-        if self.cbox_bw_custom_value.isChecked() == True and self.cbox_rad_custom_value.isChecked() == False:
-            gcell.loc[:, 'geometry'] = gcell.apply(lambda x: self.make_sector(gcell.index[gcell[lon] == x[lon]][0], x[lon], x[lat], x[azimuth], beamwidth, x[radius], per_loop), axis=1)
-        # jika tidak ada custom value untuk beamwidth tapi radius ada
-        if self.cbox_bw_custom_value.isChecked() == False and self.cbox_rad_custom_value.isChecked() == True:
-            gcell.loc[:, 'geometry'] = gcell.apply(lambda x: self.make_sector(gcell.index[gcell[lon] == x[lon]][0], x[lon], x[lat], x[azimuth], x[beamwidth], radius, per_loop), axis=1)
-        # jika ada custom value untuk beamwidth dan radius
-        if self.cbox_bw_custom_value.isChecked() == True and self.cbox_rad_custom_value.isChecked() == True:
-            gcell.loc[:, 'geometry'] = gcell.apply(lambda x: self.make_sector(gcell.index[gcell[lon] == x[lon]][0], x[lon], x[lat], x[azimuth], beamwidth, radius, per_loop), axis=1)
->>>>>>> origin/master
+            param_wedge = {'INPUT':lyr_source,'AZIMUTH':QgsProperty.fromExpression(f'"{azimuth}"'),'WIDTH':beamwidth,'OUTER_RADIUS':radius,'INNER_RADIUS':0,'OUTPUT':'TEMPORARY_OUTPUT'}
 
-        # create name for layer
-        gcell_layer_name = f'{layer}_sector_{random.randint(1,99)}'
-        
-        # logging
-        self.logging("Read layer by geopandas..")
-
-        # read by geopandas dataframe
-        gcell = gpd.GeoDataFrame(gcell, crs='epsg:4326', geometry='geometry')
+        # run native qgis wedge buffers
+        layer_wedge = processing.run("native:wedgebuffers", param_wedge)
 
         # logging
-        self.logging("Add Map Layer..")
+        self.pbar.setValue(random.randint(31,70))
+        self.logging("Wedge created..")
 
-        gcell_layer = QgsVectorLayer(gcell.to_json(), gcell_layer_name, "ogr")
-        QgsProject.instance().addMapLayer(gcell_layer)
+        gcell_layer = QgsProject.instance().addMapLayer(layer_wedge['OUTPUT'])
+
+        # if radius using column and in km, delete new_radius_field after process
+        if radius == new_radius_field:
+            # read csv to delete column radius
+            path_ori = lyr_source
+            path_ori = path_ori[:path_ori.find('.csv')+4]
+            path = path_ori
+            if 'file:///' in path:
+                path = path.replace('file:///', '')
+            path = urllib.parse.unquote(path)
+            path = Path(path)
+            df = pd.read_csv(path)
+
+            # fix unicode if any unicode
+            for columns in df.items():
+                if 'object' in str(df[columns[0]].dtype):
+                    df[columns[0]] = df[columns[0]].str.normalize('NFKD')
+            
+            # now delete the new column added in before
+            df.drop(columns=[new_radius_field], inplace=True)
+
+            # df.to_csv(path, index=False)
+            with open (path, 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(list(df))
+
+                for index, row in df.iterrows():
+                    writer.writerow(df.loc[index, :].values.flatten().tolist())
         
-        # delete memory
-        del gcell
+            # csv seem cannot be reload - I dont know. we remove old csv, then reload the new one with same path
+            layer_csv = QgsProject.instance().mapLayersByName(lyr_name)[0]
+            crs_ori = layer_csv.crs()
+            # layer_csv.reload()
+            # remove old layer
+            QgsProject.instance().removeMapLayer(layer_csv.id())
 
-        # # dir check
-        # path = f'{user_path}\\temp'
-        # if not os.path.exists(path):
-        #     os.mkdir(path)
+            # load the new one
+            uri = path_ori + f'?delimiter=,&yField={lat}&xField={lon}'
+            layer_csv_new = QgsVectorLayer(uri, lyr_name, 'delimitedtext')
+            layer_csv_new.setCrs(crs_ori)
+            QgsProject.instance().addMapLayer(layer_csv_new)
+
+            # execute param
+            layer_csv_new = QgsProject.instance().mapLayersByName(lyr_name)[0]
+            lyr_source = layer_csv_new.source()
+
+            # delete new radius field in new layer
+            with edit(gcell_layer):
+                # Get the field index by its name:
+                my_field = gcell_layer.fields().indexFromName(f'{radius}')
+                # Delete the field by its index, note that it has to be in a list:
+                gcell_layer.dataProvider().deleteAttributes([my_field])
+            # Update the fields, so the changes are recognized:
+            gcell_layer.updateFields()
+
+        # logging
+        self.pbar.setValue(random.randint(71,99))
+        self.logging("Layer loaded..")
         
-        # # save to file
-        # path_final = path + '\\temp_file.gpkg'
-
-        # save as gpkg file
-        # writer = QgsVectorFileWriter.writeAsVectorFormat(gcell_layer, path_final, "GeoPackage")
-
-        # self.pbar.setValue(random.randint(95,98))
-
-        # # load layer gpkg
-        # vlayer = QgsVectorLayer(path_final, gcell_layer_name, "ogr")
-        # QgsProject.instance().addMapLayer(vlayer)
-
-        # # if using qgis algorithm
-        # result = processing.run(None, {'INPUT': gcell_layer, 'OUTPUT': 'memory:'})
-        # QgsProject.instance().addMapLayer(result['OUTPUT'])
-
-        # # load
-        # layer = QgsVectorLayer(path_final, gcell_layer_name, "ogr")
-        # QgsProject.instance().addMapLayer(layer)
+        # rename layer gcell
+        gcell_layer_new_name = f'{lyr_name}_gcell_{random.randint(1,9)}'
+        gcell_layer.setName(gcell_layer_new_name)
 
         self.pbar.setValue(random.randint(100,100))
 
@@ -1052,7 +1017,6 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         return
 
     def run_radius_circle(self):
-<<<<<<< HEAD
         # status label
         self.status_label.setText('Processing...')
 
@@ -1085,50 +1049,6 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # button disable
         self.button_status('disable')
-=======
-        # disable frame
-        self.frame_main.setEnabled(False)
-
-        # status label
-        self.status_label.setText('Processing...')
-
-        # button disable
-        self.button_status('disable')
-        
-        # logging
-        self.logging("Run circle radius..")
-
-        # checking all combox, is there any null
-        all_combox = [self.radius_combox_list_layer, self.radius_combox_lat, self.radius_combox_lon, self.radius_combox_rad]
-        for combox in all_combox:
-            if combox.currentText() == '':
-                if combox == self.radius_combox_rad:
-                    if self.radius_cbox_rad_custom_value.isChecked() == True and self.radius_doublespinbox_rad.value() > 0.00:
-                        pass
-                    else:
-                        self.status_label.setText('❌ Please fill radius custom value!')
-                        # enable frame
-                        self.frame_main.setEnabled(True)
-                        return
-                # logging
-                self.logging('❌ Please check your columns!')
-                self.status_label.setText('❌ Please check your columns!')
-                # enable frame
-                self.frame_main.setEnabled(True)
-                return
-            if combox.currentText() != '' and combox == self.radius_combox_rad:
-                if combox == self.radius_combox_rad and self.radius_cbox_rad_custom_value.isChecked() == True:
-                    if self.radius_cbox_rad_custom_value.isChecked() == True and self.radius_doublespinbox_rad.value() > 0.00:
-                        pass
-                    else:
-                        # logging
-                        self.logging('❌ Please fill radius custom value!')
-                        self.status_label.setText('❌ Please fill radius custom value!')
-                        # enable frame
-                        self.frame_main.setEnabled(True)
-                        return
-                self.pbar.setValue(random.randint(0,3))
->>>>>>> origin/master
 
         # activate Log tab
         self.tab_widget.setCurrentIndex(3)
@@ -1256,13 +1176,55 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
             
             # process with native algo
             layer_wedge = processing.run("native:wedgebuffers", param_wedge)
-            QgsProject.instance().addMapLayer(layer_wedge['OUTPUT'])
+            layer_vector = QgsProject.instance().addMapLayer(layer_wedge['OUTPUT'])
             layer_new_name = f'{lyr_id_name_source[1]}_radius_{random.randint(1,99)}'
-            layer_need_to_rename = QgsProject.instance().mapLayersByName('Buffers')[0]
-            layer_need_to_rename.setName(layer_new_name)
+            layer_vector.setName(layer_new_name)
+
+            # delete radius field if using new radius field
+            if radius == self.radius_combox_rad.currentText():
+                with edit(layer_vector):
+                    # Get the field index by its name:
+                    my_field = layer_vector.fields().indexFromName(f'{radius_circle_field}')
+                    # Delete the field by its index, note that it has to be in a list:
+                    layer_vector.dataProvider().deleteAttributes([my_field])
+                # Update the fields, so the changes are recognized:
+                layer_vector.updateFields()
+            
+                # also delete new radius field in source csv
+                df = pd.read_csv(path)
+
+                # fix unicode if any unicode
+                for columns in df.items():
+                    if 'object' in str(df[columns[0]].dtype):
+                        df[columns[0]] = df[columns[0]].str.normalize('NFKD')
+                
+                # drop columns
+                df.drop(columns=[radius_circle_field], inplace=True)
+
+                # df.to_csv(path, index=False)
+                with open (path, 'w', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(list(df))
+
+                    for index, row in df.iterrows():
+                        writer.writerow(df.loc[index, :].values.flatten().tolist())
+            
+                # csv seem cannot be reload - I dont know. we remove old csv, then reload the new one with same path
+                layer_csv = QgsProject.instance().mapLayersByName(lyr_id_name_source[1])[0]
+                crs_ori = layer_csv.crs()
+                # layer_csv.reload()
+                # remove old layer
+                QgsProject.instance().removeMapLayer(layer_csv.id())
+
+                # load the new one
+                uri = path_ori + f'?delimiter=,&yField={lat}&xField={lon}'
+                layer_csv_new = QgsVectorLayer(uri, lyr_id_name_source[1], 'delimitedtext')
+                layer_csv_new.setCrs(crs_ori)
+                QgsProject.instance().addMapLayer(layer_csv_new)
+
             # layer_need_to_rename.setOpacity(0.1)  # this cannot be change by user, use renderer instead
-            layer_need_to_rename.renderer().symbol().setColor(QColor("#6f00ff"))
-            layer_need_to_rename.renderer().symbol().setOpacity(0.05)
+            layer_vector.renderer().symbol().setColor(QColor("#6f00ff"))
+            layer_vector.renderer().symbol().setOpacity(0.05)
 
             # free memory
             del df
@@ -1310,13 +1272,13 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
             layer_ogr_new_name = f'{lyr_id_name_source[1]}_buffer_{random.randint(1,99)}'
 
             df_layer = QgsVectorLayer(df.to_json(), layer_ogr_new_name, "ogr")
-            QgsProject.instance().addMapLayer(df_layer)
+            layer_ogr_new = QgsProject.instance().addMapLayer(df_layer)
 
             self.pbar.setValue(random.randint(56,75))
             self.logging("Start processing buffer..")
 
             # execute param
-            layer_ogr_new = QgsProject.instance().mapLayersByName(layer_ogr_new_name)[0]
+            # layer_ogr_new = QgsProject.instance().mapLayersByName(layer_ogr_new_name)[0]
             layer_ogr_new_src = layer_ogr_new.source()
 
             param_wedge = {}
@@ -1327,13 +1289,24 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
             # process with native algo
             layer_wedge = processing.run("native:wedgebuffers", param_wedge)
-            QgsProject.instance().addMapLayer(layer_wedge['OUTPUT'])
+            layer_vector_new = QgsProject.instance().addMapLayer(layer_wedge['OUTPUT'])
+
+            # delete radius field if using new radius field
+            if radius == self.radius_combox_rad.currentText():
+                with edit(layer_vector_new):
+                    # Get the field index by its name:
+                    my_field = layer_vector_new.fields().indexFromName(f'{radius_circle_field}')
+                    # Delete the field by its index, note that it has to be in a list:
+                    layer_vector_new.dataProvider().deleteAttributes([my_field])
+                # Update the fields, so the changes are recognized:
+                layer_vector_new.updateFields()
+
             layer_new_name = f'{lyr_id_name_source[1]}_radius_{random.randint(1,99)}'
-            layer_need_to_rename = QgsProject.instance().mapLayersByName('Buffers')[0]
-            layer_need_to_rename.setName(layer_new_name)
-            # layer_need_to_rename.setOpacity(0.1)  # user cannot change opacity if use this, use renderer instead
-            layer_need_to_rename.renderer().symbol().setColor(QColor("#6f00ff"))
-            layer_need_to_rename.renderer().symbol().setOpacity(0.05)
+            # layer_rad_new = QgsProject.instance().mapLayersByName('Buffers')[0]
+            layer_vector_new.setName(layer_new_name)
+            # layer_rad_new.setOpacity(0.1)  # user cannot change opacity if use this, use renderer instead
+            layer_vector_new.renderer().symbol().setColor(QColor("#6f00ff"))
+            layer_vector_new.renderer().symbol().setOpacity(0.05)
 
             # remove point layer
             layer_need_remove = QgsProject.instance().mapLayersByName(layer_ogr_new_name)[0]
@@ -1370,36 +1343,16 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
         return
 
     def run_spider_graph(self):
-<<<<<<< HEAD
-=======
-        # disable frame
-        self.frame_main.setEnabled(False)
->>>>>>> origin/master
 
         # status label
         self.status_label.setText('Processing...')
 
-<<<<<<< HEAD
-=======
-        # button disable
-        self.button_status('disable')
-        
-        # logging
-        self.logging("Run circle radius..")
-
->>>>>>> origin/master
         # checking all combox, is there any null
         all_combox = [self.spider_combox_list_layer_src, self.spider_combox_conn_src, self.spider_combox_lat_src, self.spider_combox_lon_src,
                        self.spider_combox_list_layer_tgt, self.spider_combox_conn_tgt, self.spider_combox_lat_tgt, self.spider_combox_lon_tgt]
         for combox in all_combox:
             if combox.currentText() == '':
-<<<<<<< HEAD
                 self.status_label.setText('❌ Please check your columns!')
-=======
-                self.status_label.setText('❌ Please fill radius custom value!')
-                # enable frame
-                self.frame_main.setEnabled(True)
->>>>>>> origin/master
                 return  
 
         # populate variable
@@ -1416,7 +1369,6 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
             self.status_label.setText('❌ Source and target is same layer!')
             self.frame_main.setEnabled(True)
             return
-<<<<<<< HEAD
         
         # disable frame
         self.frame_main.setEnabled(False)
@@ -1426,8 +1378,6 @@ class MakeSectorDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # logging
         self.logging("Run circle radius..")
-=======
->>>>>>> origin/master
 
         self.pbar.setValue(random.randint(0,5))
         self.logging("Populating variables..")

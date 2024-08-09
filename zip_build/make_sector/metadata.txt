@@ -4,9 +4,9 @@
 
 [general]
 name=Make Sector
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.28
 description=Plugin to create sector, circle radius, and spidergraph delimited and vector layer
-version=1.0
+version=1.1
 author=Imam Sibro Muhlisi
 email=muhlisi.online@gmail.com
 
@@ -20,7 +20,7 @@ repository=https://github.com/muhlisi/qgis-plugin-make-sector
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-# changelog=
+changelog=1.1 2024-08-09 - Change processing algorithm Create Sector menu to QGIS native algorithm for faster processing. Change bandwidth input box. Change name from Spider to Create Spidergraph. Auto delete additional column "rad_f" for Radius menu
 
 # Tags are comma separated with spaces allowed
 tags=python, wedge, telecom engineer, spidergraph, radius, azimuth, beamwidth

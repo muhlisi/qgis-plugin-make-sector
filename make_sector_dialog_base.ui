@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>574</width>
-    <height>537</height>
+    <height>536</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -38,11 +38,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-<<<<<<< HEAD
      <number>0</number>
-=======
-     <number>3</number>
->>>>>>> origin/master
     </property>
     <widget class="QWidget" name="tab_create_sector">
      <attribute name="title">
@@ -254,27 +250,36 @@
        <string>in</string>
       </property>
      </widget>
-     <widget class="QLineEdit" name="qle_bw_custom">
-      <property name="geometry">
-       <rect>
-        <x>260</x>
-        <y>230</y>
-        <width>41</width>
-        <height>20</height>
-       </rect>
-      </property>
-     </widget>
      <widget class="QDoubleSpinBox" name="doublespinbox_rad">
       <property name="geometry">
        <rect>
-        <x>240</x>
+        <x>351</x>
         <y>300</y>
-        <width>62</width>
+        <width>71</width>
         <height>22</height>
        </rect>
       </property>
       <property name="maximum">
        <double>10000.000000000000000</double>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="doublespinbox_bw">
+      <property name="geometry">
+       <rect>
+        <x>351</x>
+        <y>230</y>
+        <width>71</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="minimum">
+       <double>5.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>170.000000000000000</double>
+      </property>
+      <property name="singleStep">
+       <double>5.000000000000000</double>
       </property>
      </widget>
     </widget>
@@ -367,9 +372,9 @@
      <widget class="QDoubleSpinBox" name="radius_doublespinbox_rad">
       <property name="geometry">
        <rect>
-        <x>240</x>
+        <x>360</x>
         <y>190</y>
-        <width>62</width>
+        <width>65</width>
         <height>22</height>
        </rect>
       </property>
@@ -439,7 +444,7 @@
     </widget>
     <widget class="QWidget" name="tab">
      <attribute name="title">
-      <string>Spider</string>
+      <string>Create Spidergraph</string>
      </attribute>
      <widget class="QFrame" name="spider_frame_src">
       <property name="geometry">
@@ -794,39 +799,11 @@
         <x>10</x>
         <y>10</y>
         <width>511</width>
-        <height>301</height>
+        <height>351</height>
        </rect>
       </property>
       <property name="verticalScrollBarPolicy">
        <enum>Qt::ScrollBarAlwaysOff</enum>
-      </property>
-     </widget>
-     <widget class="QTextEdit" name="credit">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>320</y>
-        <width>511</width>
-        <height>45</height>
-       </rect>
-      </property>
-      <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarAlwaysOff</enum>
-      </property>
-      <property name="horizontalScrollBarPolicy">
-       <enum>Qt::ScrollBarAlwaysOff</enum>
-      </property>
-      <property name="html">
-       <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Developed by&lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-weight:600;&quot;&gt; Imam Sibro Muhlisi&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Any error, suggestion, or opinion please contact me at &lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-weight:600;&quot;&gt;LinkedIn&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;:&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;https://www.linkedin.com/in/imam-sibro-muhlisi/&quot;&gt;&lt;span style=&quot; font-size:7pt; text-decoration: underline; color:#0000ff;&quot;&gt;https://www.linkedin.com/in/imam-sibro-muhlisi/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="textInteractionFlags">
-       <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextEditable|Qt::TextEditorInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
       </property>
      </widget>
     </widget>
@@ -883,7 +860,7 @@ p, li { white-space: pre-wrap; }
      <string>Run</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_13">
+   <widget class="QLabel" name="label_version">
     <property name="geometry">
      <rect>
       <x>410</x>
@@ -904,7 +881,7 @@ p, li { white-space: pre-wrap; }
      <string extracomment="Make Sector by Sibro"/>
     </property>
     <property name="text">
-     <string>Make Sector v1.0</string>
+     <string>version label</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
